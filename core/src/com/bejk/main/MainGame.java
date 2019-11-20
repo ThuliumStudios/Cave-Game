@@ -1,33 +1,93 @@
 package com.bejk.main;
 
-import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.bejk.entity.OnlinePlayer;
+import com.bejk.net.GameClient;
+import com.bejk.net.NetworkHandler;
+import com.bejk.net.packet.PlayerPacket;
+import com.bejk.screen.SplashScreen;
+import com.bejk.util.DataHandler;
+import com.bejk.util.SpriteAccessor;
 
-public class MainGame extends ApplicationAdapter {
-	SpriteBatch batch;
-	Texture img;
-	
+import aurelienribon.tweenengine.Tween;
+import aurelienribon.tweenengine.TweenManager;
+
+public class MainGame extends Game {
+	private Batch batch;
+	private Skin skin;
+
+	private GameClient client;
+	private NetworkHandler handler;
+	private DataHandler dataHandler;
+	private TweenManager tweenManager;
+
 	@Override
-	public void create () {
+	public void create() {
 		batch = new SpriteBatch();
-		img = new Texture("badlogic.jpg");
+		tweenManager = new TweenManager();
+		dataHandler = new DataHandler();
+		handler = new NetworkHandler(this);
+		skin = new Skin(Gdx.files.internal("skin/rusty-robot-ui.json"));
+		
+		Tween.registerAccessor(Sprite.class, new SpriteAccessor());
+		setScreen(new SplashScreen(this));
+	}
+
+	public void connect() {
+		handler = new NetworkHandler(this);
+		client = new GameClient(handler, this);
+		client.connect();
 	}
 
 	@Override
-	public void render () {
-		Gdx.gl.glClearColor(1, 0, 0, 1);
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		batch.begin();
-		batch.draw(img, 0, 0);
-		batch.end();
+	public void render() {
+		super.render();
+		tweenManager.update(Gdx.graphics.getDeltaTime());
+	}
+
+	public NetworkHandler getNetworkHandler() {
+		return handler;
+	}
+
+	public Batch getBatch() {
+		return batch;
 	}
 	
+	public Skin getSkin() {
+		return skin;
+	}
+	
+	public TweenManager getTween() {
+		return tweenManager;
+	}
+
+	public <T> T getAsset(String path, Class<T> type) {
+		return dataHandler.getAsset(path, type);
+	}
+
+	public void sendData(Object o) {
+		client.sendPlayer((PlayerPacket) o);
+	}
+
+	public void interpolatePlayer(OnlinePlayer player, PlayerPacket packet) {
+		Tween.to(player.getSprite(), SpriteAccessor.POS_XY, 1 / 14f).target(packet.x, packet.y).start(tweenManager);
+	}
+
+	public boolean isDoneLoading() {
+		return dataHandler.isDoneLoading();
+	}
+
 	@Override
-	public void dispose () {
-		batch.dispose();
-		img.dispose();
+	public void dispose() {
+		getScreen().dispose();
+		dataHandler.dispose();
+		skin.dispose();
+		if (client != null)
+			client.dispose();
 	}
 }
