@@ -1,0 +1,17 @@
+[
+	{
+		"id": 0,
+		"name": "Slime",
+		"hp": 10,
+		"attack": [1,1,1],
+		"defence": [1,1,1],
+		"styles": [0],
+		"chance": [1],
+		"drops": [0,1],
+		"dropAmounts": [1,1],
+		"dropRates": [1,0.3]
+	},
+	{
+		
+	}
+]
