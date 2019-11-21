@@ -12,7 +12,7 @@ public class DataHandler {
 
 	public DataHandler() {
 		assets = new AssetManager();
-		Arrays.asList("background", "player").forEach(this::loadAsset);
+		Arrays.asList("background", "blob", "player").forEach(this::loadAsset);
 	}
 
 	public void loadAsset(String str) {

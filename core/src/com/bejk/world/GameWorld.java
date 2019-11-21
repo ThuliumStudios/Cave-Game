@@ -1,5 +1,7 @@
 package com.bejk.world;
 
+import java.util.Arrays;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.graphics.GL20;
@@ -14,6 +16,7 @@ import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.bejk.entity.Monster;
 import com.bejk.main.MainGame;
 import com.bejk.net.NetworkHandler;
 import com.bejk.player.Player;
@@ -57,7 +60,7 @@ public class GameWorld {
 
 		batch.setProjectionMatrix(camera.combined);
 		batch.begin();
-		network.render(batch, delta);
+		network.render(batch, player, delta);
 		player.render(batch, delta);
 		batch.end();
 

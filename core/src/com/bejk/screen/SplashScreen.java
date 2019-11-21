@@ -34,7 +34,7 @@ public class SplashScreen implements Screen {
 		batch = game.getBatch();
 		
 		Tween.set(logo, SpriteAccessor.OPACITY).target(0).start(game.getTween());
-		Tween.to(logo, SpriteAccessor.OPACITY, 1).target(1).repeatYoyo(1, 3)
+		Tween.to(logo, SpriteAccessor.OPACITY, 1).target(1).repeatYoyo(1, 1)
 				.setCallback(new TweenCallback() {
 					@Override
 					public void onEvent(int type, BaseTween<?> source) {

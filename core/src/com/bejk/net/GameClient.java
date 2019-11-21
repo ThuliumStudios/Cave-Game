@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 import com.badlogic.gdx.Gdx;
 import com.bejk.main.MainGame;
 import com.bejk.net.packet.DisconnectionPacket;
+import com.bejk.net.packet.MonsterPacket;
 import com.bejk.net.packet.PlayerPacket;
 import com.bejk.screen.GameScreen;
 import com.esotericsoftware.kryonet.Client;
@@ -54,6 +55,7 @@ public class GameClient {
 	private Listener clientListener = new Listener() {
 		public void received(Connection connection, Object object) {
 			switchType(object, caze(PlayerPacket.class, packet -> updatePlayer(connection.getID(), packet)),
+					caze(MonsterPacket.class, packet -> handler.updateMonster(packet)),
 					caze(DisconnectionPacket.class, packet -> handler.removePlayer(packet.ID)));
 		};
 

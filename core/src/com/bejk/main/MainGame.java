@@ -16,6 +16,7 @@ import com.bejk.util.SpriteAccessor;
 
 import aurelienribon.tweenengine.Tween;
 import aurelienribon.tweenengine.TweenManager;
+import aurelienribon.tweenengine.equations.Linear;
 
 public class MainGame extends Game {
 	private Batch batch;
@@ -74,10 +75,10 @@ public class MainGame extends Game {
 		client.sendPlayer((PlayerPacket) o);
 	}
 
-	public void interpolatePlayer(OnlinePlayer player, PlayerPacket packet) {
-		Tween.to(player.getSprite(), SpriteAccessor.POS_XY, 1 / 14f).target(packet.x, packet.y).start(tweenManager);
+	public void interpolatePlayer(Sprite sprite, float x, float y, float duration) {
+		Tween.to(sprite, SpriteAccessor.POS_XY, duration).target(x, y).ease(Linear.INOUT).start(tweenManager);
 	}
-
+	
 	public boolean isDoneLoading() {
 		return dataHandler.isDoneLoading();
 	}
