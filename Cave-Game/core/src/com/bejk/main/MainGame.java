@@ -39,10 +39,10 @@ public class MainGame extends Game {
 		setScreen(new SplashScreen(this));
 	}
 
-	public void connect() {
+	public boolean connect() {
 		handler = new NetworkHandler(this);
 		client = new GameClient(handler, this);
-		client.connect();
+		return client.connect();
 	}
 
 	@Override
@@ -72,7 +72,7 @@ public class MainGame extends Game {
 	}
 
 	public void sendData(Object o) {
-		client.sendPlayer((PlayerPacket) o);
+		client.sendData(o, false);
 	}
 
 	public void interpolatePlayer(Sprite sprite, float x, float y, float duration) {

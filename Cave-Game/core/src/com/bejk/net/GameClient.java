@@ -33,28 +33,27 @@ public class GameClient {
 		client.addListener(clientListener);
 	}
 
-	public void connect() {
+	public boolean connect() {
 		try {
 			client.connect(5000, IP, 55668, 55667);
 			game.setScreen(new GameScreen(game, getID()));
+			return true;
 		} catch (IOException e) {
 			Gdx.app.log("Connection", "Unable to connect. \n" + e);
-			return;
+			return false;
 		}
 	}
 	
-	public void sendPlayer(PlayerPacket packet) {
-		packet.ID = client.getID();
-		client.sendUDP(packet);
-	}
-
-	public void updatePlayer(int ID, PlayerPacket packet) {
-		handler.updatePlayer(packet);
+	public void sendData(Object packet, boolean TCP) {
+		if (TCP) 
+			client.sendTCP(packet);
+		else 
+			client.sendUDP(packet);
 	}
 
 	private Listener clientListener = new Listener() {
 		public void received(Connection connection, Object object) {
-			switchType(object, caze(PlayerPacket.class, packet -> updatePlayer(connection.getID(), packet)),
+			switchType(object, caze(PlayerPacket.class, packet -> handler.updatePlayer(packet)),
 					caze(MonsterPacket.class, packet -> handler.updateMonster(packet)),
 					caze(DisconnectionPacket.class, packet -> handler.removePlayer(packet.ID)));
 		};
@@ -81,7 +80,7 @@ public class GameClient {
 			consumer.accept(o);
 	}
 
-	public static <T> Consumer caze(Class<T> cls, Consumer<T> c) {
+	public static <T> Consumer<T> caze(Class<T> cls, Consumer<T> c) {
 		return obj -> Optional.of(obj).filter(cls::isInstance).map(cls::cast).ifPresent(c);
 	}
 }

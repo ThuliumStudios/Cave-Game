@@ -2,6 +2,7 @@ package com.bejk.net;
 
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.ObjectMap;
 import com.bejk.entity.Monster;
 import com.bejk.entity.OnlinePlayer;
@@ -24,6 +25,10 @@ public class NetworkHandler {
 		players.values().forEach(p -> p.render(batch, delta));
 		monsters.values().forEach(p -> p.render(batch, delta));
 	}
+	
+	public void renderHP(ShapeRenderer shapes) {
+		monsters.values().forEach(p -> p.renderHP(shapes));
+	}
 
 	public void addNewPlayer(PlayerPacket packet) {
 		OnlinePlayer newPlayer = new OnlinePlayer(game.getAsset("img/player.atlas", TextureAtlas.class));
@@ -34,13 +39,13 @@ public class NetworkHandler {
 	public void addNewMonster(MonsterPacket packet) {
 		Monster m = new Monster(game.getAsset("img/blob.atlas", TextureAtlas.class));
 		m.set(packet);
-		monsters.put(packet.ID, m);
+		monsters.put(packet.eID, m);
 	}
 
 	public void updatePlayer(PlayerPacket packet) {
 		// TODO: Remove this mess
 		if (players.containsKey(packet.ID)) {
-			game.interpolatePlayer(players.get(packet.ID).getSprite(), packet.x, packet.y, 1/14f);
+			game.interpolatePlayer(players.get(packet.ID).getSprite(), packet.x, packet.y, 1/9f);
 			players.get(packet.ID).animate(packet.anim);
 		} else
 			addNewPlayer(packet);
@@ -49,10 +54,13 @@ public class NetworkHandler {
 	}
 
 	public void updateMonster(MonsterPacket packet) {
-		System.out.println("Got monster at "+packet.x + ","+packet.y);
-		if (monsters.containsKey(packet.ID)) {
-			//monsters.get(packet.ID).set(packet);
-			game.interpolatePlayer(monsters.get(packet.ID).getSprite(), packet.x, packet.y, 1);
+		if (monsters.containsKey(packet.eID)) {
+			game.interpolatePlayer(monsters.get(packet.eID).getSprite(), packet.x, packet.y, 1);
+			monsters.get(packet.eID).update(packet);
+			//TODO: Tidy code up
+			if (packet.hp <= 0) {
+				monsters.remove(packet.eID);
+			}
 		} else
 			addNewMonster(packet);
 	}

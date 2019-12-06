@@ -1,6 +1,8 @@
 package com.bejk.main;
 
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.Random;
@@ -8,7 +10,10 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Consumer;
 
+import com.bejk.combat.CombatHandler;
+import com.bejk.entity.MonsterHandler;
 import com.bejk.net.Registration;
+import com.bejk.net.packet.AttackRequest;
 import com.bejk.net.packet.DisconnectionPacket;
 import com.bejk.net.packet.MonsterPacket;
 import com.bejk.net.packet.PlayerPacket;
@@ -23,7 +28,7 @@ public class CaveGameServer {
 	private HashMap<Integer, Object> updatedUDP = new HashMap<>();
 	private Random random;
 	private boolean isRunning = true;
-	
+
 	// Tick values
 	private long delta, lastTime;
 
@@ -40,35 +45,42 @@ public class CaveGameServer {
 		}
 		server.start();
 		server.addListener(serverListener);
-		
-		random = new Random();
-		
+
+		long seed = System.currentTimeMillis();
+		System.out.println("Seed: " + seed);
+		random = new Random(seed);
+
 //		while (isRunning) {
 //			tick();
 //		}
-		
+
 		// TODO: Replace with 'tick' method
 		Timer tickTimer = new Timer();
 		tickTimer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				sendServerData();
+				if (isRunning)
+					sendServerData();
 			}
-		}, 3000, 1000 / 15L);
+		}, 3000, 1000 / 10L);
 		Timer monsterMovement = new Timer();
 		monsterMovement.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				calculate();
+				if (isRunning)
+					calculate();
 			}
 		}, 10000, 6000);
-		
-		// TODO: Delete
+
+		// TODO: Delete ------------------------------>
 		MonsterPacket mp = new MonsterPacket();
-		mp.ID = 0;
+		mp.eID = 0;
+		mp.mID = 0;
+		mp.hp = 5;
 		mp.x = 15;
 		mp.y = 15;
-		monsters.put(mp.ID, mp);
+		monsters.put(mp.eID, mp);
+		// ------------------------------------------->
 	}
 
 	public void sendServerData() {
@@ -77,13 +89,54 @@ public class CaveGameServer {
 		updatedUDP.clear();
 		updatedTCP.clear();
 	}
-	
+
 	public void calculate() {
 		monsters.values().forEach(m -> {
+			if (m.hp <= 0)
+				return;
 			m.x = (float) Math.max((m.x - 5) + random.nextInt(10), 1);
 			m.y = (float) Math.max((m.y - 5) + random.nextInt(10), 1);
-			queueUpdate(-m.ID, m, true);
+			queueUpdate(-m.eID, m, true);
 		});
+	}
+
+	public void processAttack(AttackRequest attack) {
+		System.out.println("Attacked");
+		Rectangle2D attackBox = new Rectangle2D.Float(attack.x, attack.y, 1, 1);
+		Rectangle2D monsterHitbox = new Rectangle2D.Float();
+		monsters.forEach((k, v) -> {
+			if (v.hp <= 0) {
+				System.out.println("Hims dead");
+				return;
+			}
+			monsterHitbox.setRect(v.x, v.y, 1, 1);
+			System.out.println("Atacked at " + attackBox.getX() + "," + attackBox.getY());
+			System.out.println("Monster is at " + monsterHitbox.getX() + "," + monsterHitbox.getY());
+			if (attackBox.intersects(monsterHitbox)) {
+				attackMonster(v, attack);
+			}
+			queueUpdate(-v.eID, v, true);
+		});
+	}
+
+	public void attackMonster(MonsterPacket monster, AttackRequest attacker) {
+		monster.hp -= CombatHandler.damageEnemy(monster, players.get(attacker.attackerID));
+		if (monster.hp <= 0) {
+			MonsterHandler.queueSpawn(monster);
+			queueUpdate(-monster.eID, monster, true);
+		}
+	}
+
+	public boolean isDead(MonsterPacket monster) {
+		return monster.hp <= 0;
+	}
+
+	public void killMonster(MonsterPacket packet) {
+		System.out.println("Killing monster");
+	}
+
+	public void killPlayer() {
+
 	}
 
 	public void queueUpdate(int ID, Object object, boolean tcp) {
@@ -104,7 +157,8 @@ public class CaveGameServer {
 	private Listener serverListener = new Listener() {
 		@Override
 		public void received(Connection connection, Object object) {
-			switchType(object, caze(PlayerPacket.class, packet -> updatePlayer(packet)));
+			switchType(object, caze(PlayerPacket.class, packet -> updatePlayer(packet)),
+					caze(AttackRequest.class, packet -> processAttack(packet)));
 		};
 
 		@Override
@@ -121,7 +175,8 @@ public class CaveGameServer {
 	};
 
 	/**
-	 * 
+	 * Consumer classes. Allows for a semblance of "switch case" statements with
+	 * class types and packet reception.
 	 */
 	public static <T> void switchType(Object o, Consumer<?>... a) {
 		for (Consumer consumer : a)

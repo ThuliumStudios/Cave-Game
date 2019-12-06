@@ -5,6 +5,8 @@ import com.badlogic.gdx.InputProcessor;
 import com.bejk.util.Units;
 
 public class PlayerInput implements InputProcessor {
+	
+	
 	private Player player;
 
 	public PlayerInput(Player player) {
@@ -15,20 +17,27 @@ public class PlayerInput implements InputProcessor {
 	public boolean keyDown(int keycode) {
 		switch (keycode) {
 		case Keys.W:
+			player.setDirection('n');
 			player.setVelocity(0, Units.SPEED);
-			player.animate("walk_n", true);
+			player.animate("walk", true);
 			break;
 		case Keys.A:
+			player.setDirection('w');
 			player.setVelocity(-Units.SPEED, 0);
-			player.animate("walk_w", true);
+			player.animate("walk", true);
 			break;
 		case Keys.S:
+			player.setDirection('s');
 			player.setVelocity(0, -Units.SPEED);
-			player.animate("walk_s", true);
+			player.animate("walk", true);
 			break;
 		case Keys.D:
+			player.setDirection('e');
 			player.setVelocity(Units.SPEED, 0);
-			player.animate("walk_e", true);
+			player.animate("walk", true);
+			break;
+		case Keys.SPACE:
+			player.attack();
 			break;
 		default:
 			return false;

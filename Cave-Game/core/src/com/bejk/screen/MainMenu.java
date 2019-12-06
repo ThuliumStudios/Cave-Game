@@ -16,15 +16,17 @@ import com.badlogic.gdx.scenes.scene2d.ui.Value;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener.ChangeEvent;
 import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.utils.Timer;
+import com.badlogic.gdx.utils.Timer.Task;
 import com.bejk.main.MainGame;
 
 public class MainMenu implements Screen {
 	private Batch batch;
 	private Stage stage;
 	private Skin skin;
-	
+
 	private Texture background;
-	
+
 	private MainGame game;
 
 	public MainMenu(MainGame game) {
@@ -37,13 +39,13 @@ public class MainMenu implements Screen {
 		batch = game.getBatch();
 		stage = new Stage();
 		skin = game.getSkin();
-		
+
 		Table table = new Table(skin);
 		Label title = new Label("Cave Game", skin);
-		
+
 		title.setAlignment(Align.center);
 		title.setFontScale(5);
-		
+
 		TextButton continueGame = new TextButton("Continue", skin);
 		TextButton newGame = new TextButton("New Game", skin);
 		TextButton settings = new TextButton("Settings", skin);
@@ -55,7 +57,7 @@ public class MainMenu implements Screen {
 				new SavedGames("Select Saved Profile", skin).show(stage);
 			}
 		});
-		
+
 		table.defaults().expand().width(Value.percentWidth(.5f, table)).growY();
 		table.setFillParent(true);
 		table.add(title).height(Value.percentHeight(.2f, table)).row();
@@ -64,7 +66,7 @@ public class MainMenu implements Screen {
 		table.add(settings).row();
 		table.add(bestiary).row();
 		table.add(credits).row();
-		
+
 		stage.addActor(table);
 		Gdx.input.setInputProcessor(stage);
 	}
@@ -73,11 +75,11 @@ public class MainMenu implements Screen {
 	public void render(float delta) {
 		Gdx.gl.glClearColor(1, 1, 1, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		
+
 		batch.begin();
 		batch.draw(background, 0, 0, stage.getWidth(), stage.getHeight());
 		batch.end();
-		
+
 		stage.act(delta);
 		stage.draw();
 	}
@@ -106,18 +108,47 @@ public class MainMenu implements Screen {
 	private class SavedGames extends Dialog {
 		public SavedGames(String title, Skin skin) {
 			super(title, skin);
-			
-			String[] str = {};
+
 			for (int i = 0; i < 3; i++) {
-				button("Profile " + (i+1), i);
+				button("Profile " + (i + 1), i);
 				getButtonTable().row();
 			}
 		}
-		
+
 		@Override
 		protected void result(Object object) {
 			super.result(object);
-			game.connect();
+			
+			int val = (Integer) object;
+			switch (val) {
+			case -1:
+				hide();
+				break;
+			case 0:
+			case 1:
+			case 2:
+				getTitleLabel().setText("Loading. . .");
+				tryToConnect();
+				break;
+			default:
+				break;
+			}
+		}
+
+		public void tryToConnect() {
+			cancel();
+			getButtonTable().clearChildren();
+			Gdx.app.postRunnable(new Runnable() {
+				@Override
+				public void run() {
+					if (!game.connect()) {
+						text("Unable to connect.");
+						getContentTable().row();
+						text("The server is not running.");
+						button("OK", -1);
+					}
+				}
+			});
 		}
 	}
 }
